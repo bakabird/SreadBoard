@@ -29,7 +29,7 @@ class _CustomAlertState extends State<CustomAlert> {
     deviceHeight = orientation == Orientation.portrait
         ? viewsSize.height
         : viewsSize.width;
-    dialogHeight = deviceHeight * (0.50);
+    dialogHeight = deviceHeight * 0.50;
 
     return MediaQuery(
       data: const MediaQueryData(),

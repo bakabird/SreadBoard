@@ -57,7 +57,7 @@ class _DescriptionTextWidgetState extends State<DescriptionTextWidget> {
           : Column(
               children: <Widget>[
                 Text(
-                  (flag ? ('$firstHalf...') : (firstHalf + secondHalf))
+                  (flag ? '$firstHalf...' : (firstHalf + secondHalf))
                       .replaceAll(r'\n', '\n\n')
                       .replaceAll(r'\r', '')
                       .replaceAll(r"\'", "'"),

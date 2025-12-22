@@ -30,7 +30,7 @@ final ThemeData lightTheme = ThemeData(
     ),
   ),
   appBarTheme: const AppBarTheme(
-    color: lightPrimary,
+    backgroundColor: lightPrimary,
     elevation: 0.0,
     titleTextStyle: TextStyle(
       color: Colors.black,
@@ -62,7 +62,7 @@ final ThemeData darkTheme = ThemeData(
     ),
   ),
   appBarTheme: const AppBarTheme(
-    color: darkPrimary,
+    backgroundColor: darkPrimary,
     elevation: 0.0,
     titleTextStyle: TextStyle(
       color: Colors.white,
