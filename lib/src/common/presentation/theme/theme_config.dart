@@ -19,7 +19,7 @@ final ThemeData lightTheme = ThemeData(
   navigationRailTheme: const NavigationRailThemeData(
     backgroundColor: smokeWhite,
   ),
-  tabBarTheme: const TabBarTheme(
+  tabBarTheme: const TabBarThemeData(
     labelColor: Colors.black,
     unselectedLabelColor: Colors.grey,
     indicator: UnderlineTabIndicator(
@@ -53,7 +53,7 @@ final ThemeData darkTheme = ThemeData(
   navigationRailTheme: const NavigationRailThemeData(
     backgroundColor: darkPrimary,
   ),
-  tabBarTheme: const TabBarTheme(
+  tabBarTheme: const TabBarThemeData(
     indicator: UnderlineTabIndicator(
       borderSide: BorderSide(
         color: lightAccent,

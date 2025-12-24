@@ -31,7 +31,7 @@ class MyApp extends ConsumerWidget {
   // Apply font to our app's theme
   ThemeData themeData(ThemeData theme) {
     return theme.copyWith(
-      textTheme: GoogleFonts.sourceSansProTextTheme(
+      textTheme: GoogleFonts.sourceSans3TextTheme(
         theme.textTheme,
       ),
       colorScheme: theme.colorScheme.copyWith(

@@ -23,7 +23,8 @@ class LazyZipDecoder {
 
         // The attributes are stored in base 8
         final mode = zfh.externalFileAttributes;
-        final compress = zf.compressionMethod != a.ZipFile.STORE;
+        // ZipFile compression method: 0 = store (no compression)
+        final compress = zf.compressionMethod != 0;
 
         LazyArchiveFile file = LazyArchiveFile(
             zfh, zf.filename, zf.uncompressedSize, zf.compressionMethod);

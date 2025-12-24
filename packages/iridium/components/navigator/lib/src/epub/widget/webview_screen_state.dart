@@ -39,7 +39,7 @@ class WebViewScreenState extends State<WebViewScreen> {
   StreamSubscription<PaginationInfo>? _paginationInfoSubscription;
   late EpubCallbacks epubCallbacks;
   late bool currentSelectedSpineItem;
-  late SelectionListener selectionListener;
+  late ReaderSelectionListener selectionListener;
   late StreamController<Selection?> selectionController;
   late StreamSubscription<Selection?> selectionSubscription;
   late StreamSubscription<ReaderAnnotation> bookmarkSubscription;
@@ -167,8 +167,8 @@ class WebViewScreenState extends State<WebViewScreen> {
       ? InAppWebView(
           key: _webViewKey,
           initialUrlRequest: URLRequest(
-              url: Uri.parse(
-                  '${widget.address}/${link.href.removePrefix("/")}')),
+              url: WebUri.uri(
+                  Uri.parse('${widget.address}/${link.href.removePrefix("/")}'))),
           initialOptions: InAppWebViewGroupOptions(
             android: AndroidInAppWebViewOptions(
               useHybridComposition: true,
@@ -228,7 +228,7 @@ class WebViewScreenState extends State<WebViewScreen> {
         )
       : const SizedBox.shrink();
 
-  void _onPageFinished(InAppWebViewController controller, Uri? url) async {
+  void _onPageFinished(InAppWebViewController controller, WebUri? url) async {
     // Fimber.d("_onPageFinished[$position]: $url");
     try {
       OpenPageRequest? openPageRequestData =

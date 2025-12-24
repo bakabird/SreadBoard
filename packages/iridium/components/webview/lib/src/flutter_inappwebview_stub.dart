@@ -6,6 +6,28 @@ import 'package:flutter/widgets.dart';
 
 typedef JavaScriptHandlerCallback = dynamic Function(List<dynamic> arguments);
 
+class WebUri {
+  final Uri _uri;
+  bool forceToStringRawValue;
+
+  WebUri(String value, {this.forceToStringRawValue = false})
+      : _uri = Uri.parse(value);
+
+  WebUri.uri(Uri uri, {this.forceToStringRawValue = false}) : _uri = uri;
+
+  String get rawValue => _uri.toString();
+  Uri get uriValue => _uri;
+
+  String get path => _uri.path;
+  String get query => _uri.query;
+  String get fragment => _uri.fragment;
+  bool get hasQuery => _uri.hasQuery;
+  bool get hasFragment => _uri.hasFragment;
+
+  @override
+  String toString() => forceToStringRawValue ? rawValue : _uri.toString();
+}
+
 class InAppWebViewController {
   Future<dynamic> evaluateJavascript({required String source}) async {}
 
@@ -16,14 +38,15 @@ class InAppWebViewController {
   Future<void> loadUrl(
       {required URLRequest urlRequest,
       @Deprecated('Use `allowingReadAccessTo` instead')
-          Uri? iosAllowingReadAccessTo,
-      Uri? allowingReadAccessTo}) async {}
+          WebUri? iosAllowingReadAccessTo,
+      WebUri? allowingReadAccessTo}) async {}
 
   Future<Uint8List?> takeScreenshot() async => null;
 }
 
 class URLRequest {
-  URLRequest({required Uri? url});
+  WebUri? url;
+  URLRequest({required this.url});
 }
 
 class InAppWebView extends StatefulWidget {
@@ -38,7 +61,7 @@ class InAppWebView extends StatefulWidget {
             InAppWebViewController controller, WebResourceRequest request)?
         androidShouldInterceptRequest,
     shouldOverrideUrlLoading,
-    onLoadStop,
+    void Function(InAppWebViewController controller, WebUri? url)? onLoadStop,
     gestureRecognizers,
     contextMenu,
     onWebViewCreated,
@@ -54,7 +77,7 @@ class _InAppWebViewState extends State<InAppWebView> {
 }
 
 class WebResourceRequest {
-  Uri url;
+  WebUri url;
   Map<String, String>? headers;
   String? method;
   bool? hasGesture;
