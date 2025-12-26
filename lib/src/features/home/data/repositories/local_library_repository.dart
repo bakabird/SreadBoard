@@ -15,6 +15,7 @@ class LocalLibraryRepository {
   final Database _database;
   final StoreRef<String, Map<String, dynamic>> _store;
   final Uuid _uuid = const Uuid();
+  static const Set<String> _supportedFileTypes = {'epub', 'txt'};
 
   Future<List<LocalBook>> loadAll() async {
     final records = await _store.find(
@@ -28,14 +29,21 @@ class LocalLibraryRepository {
             id: record.key,
           ),
         )
+        .where((book) => _supports(book.fileType))
         .toList();
   }
 
   Future<LocalBook> importFile(File file) async {
     final Directory booksDir = await _getBooksDir();
-    final extensionName = extension(file.path).toLowerCase();
+    final fileType = extension(file.path)
+        .replaceFirst('.', '')
+        .toLowerCase()
+        .trim();
+    if (!_supports(fileType)) {
+      throw UnsupportedError('Only EPUB and TXT files can be imported.');
+    }
     final id = _uuid.v4();
-    final fileName = '$id$extensionName';
+    final fileName = '$id.$fileType';
     final targetFile = await file.copy(join(booksDir.path, fileName));
 
     final book = LocalBook(
@@ -43,7 +51,7 @@ class LocalLibraryRepository {
       title: basenameWithoutExtension(file.path),
       author: null,
       filePath: targetFile.path,
-      fileType: extensionName.replaceFirst('.', ''),
+      fileType: fileType,
       coverPath: null,
       importedAt: DateTime.now(),
     );
@@ -69,6 +77,9 @@ class LocalLibraryRepository {
   Future<void> update(LocalBook book) async {
     await _store.record(book.id).update(_database, book.toMap());
   }
+
+  bool _supports(String fileType) =>
+      _supportedFileTypes.contains(fileType.toLowerCase());
 
   Future<Directory> _getBooksDir() async {
     final dir = await getApplicationDocumentsDirectory();

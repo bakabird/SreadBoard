@@ -22,7 +22,7 @@ class _HomeScreenSmallState extends ConsumerState<HomeScreenSmall> {
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
-      allowedExtensions: ['epub', 'pdf'],
+      allowedExtensions: ['epub', 'txt'],
     );
     if (result == null) return;
 
@@ -37,6 +37,8 @@ class _HomeScreenSmallState extends ConsumerState<HomeScreenSmall> {
     try {
       await ref.read(libraryNotifierProvider.notifier).importFiles(files);
       _showSnackBar('Imported ${files.length} book(s).');
+    } on UnsupportedError catch (err) {
+      _showSnackBar(err.message ?? 'Only EPUB and TXT files are supported.');
     } catch (_) {
       _showSnackBar('Failed to import books.');
     }
@@ -167,7 +169,7 @@ class _EmptyLibrary extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Import EPUB or PDF files from your device to start reading.',
+              'Import EPUB or TXT files from your device to start reading.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
