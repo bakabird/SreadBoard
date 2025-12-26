@@ -38,7 +38,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     // watch providers so they don't get disposed
-    ref.watch(homeFeedNotifierProvider);
+    ref.watch(libraryNotifierProvider);
 
     return PopScope(
       onPopInvoked: (_) async {

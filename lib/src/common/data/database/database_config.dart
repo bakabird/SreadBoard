@@ -39,11 +39,14 @@ mixin DatabaseConfig {
   static List<String> get databaseNames => [
         downloadsDatabaseName,
         favoritesDatabaseName,
+        libraryDatabaseName,
       ];
 
   static String get downloadsDatabaseName => 'download.db';
 
   static String get favoritesDatabaseName => 'favorites11.db';
+
+  static String get libraryDatabaseName => 'library.db';
 
   static Future<String> _generateDbPath(String dbName) async {
     if (kIsWeb) return dbName;

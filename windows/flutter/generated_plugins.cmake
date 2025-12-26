@@ -5,7 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_windows
   permission_handler_windows
-  share_plus_windows
+  share_plus
   url_launcher_windows
 )
 

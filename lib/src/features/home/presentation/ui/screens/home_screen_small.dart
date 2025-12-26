@@ -1,7 +1,9 @@
-import 'package:auto_route/auto_route.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_ebook_app/src/common/common.dart';
 import 'package:flutter_ebook_app/src/features/features.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class HomeScreenSmall extends ConsumerStatefulWidget {
@@ -12,24 +14,44 @@ class HomeScreenSmall extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenSmallState extends ConsumerState<HomeScreenSmall> {
-  void loadData() {
-    ref.read(homeFeedNotifierProvider.notifier).fetch();
+  Future<void> _refreshLibrary() async {
+    await ref.read(libraryNotifierProvider.notifier).refresh();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(homeFeedNotifierProvider).maybeWhen(
-            orElse: () => loadData(),
-            data: (_) => null,
-          );
-    });
+  Future<void> _importBooks() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: ['epub', 'pdf'],
+    );
+    if (result == null) return;
+
+    final files = result.files
+        .where((file) => file.path != null)
+        .map((file) => File(file.path!))
+        .toList();
+    if (files.isEmpty) {
+      _showSnackBar('Unable to import these files.');
+      return;
+    }
+    try {
+      await ref.read(libraryNotifierProvider.notifier).importFiles(files);
+      _showSnackBar('Imported ${files.length} book(s).');
+    } catch (_) {
+      _showSnackBar('Failed to import books.');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final homeDataState = ref.watch(homeFeedNotifierProvider);
+    final libraryState = ref.watch(libraryNotifierProvider);
     return Scaffold(
       appBar: context.isSmallScreen
           ? AppBar(
@@ -38,197 +60,125 @@ class _HomeScreenSmallState extends ConsumerState<HomeScreenSmall> {
                 appName,
                 style: TextStyle(fontSize: 20.0),
               ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.file_upload),
+                  onPressed: _importBooks,
+                ),
+              ],
+            )
+          : null,
+      floatingActionButton: context.isSmallScreen
+          ? FloatingActionButton.extended(
+              onPressed: _importBooks,
+              icon: const Icon(Icons.library_add),
+              label: const Text('Import'),
             )
           : null,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 500),
-        child: homeDataState.maybeWhen(
-          orElse: () => const SizedBox.shrink(),
-          loading: () => const LoadingWidget(),
-          data: (feeds) {
-            final popular = feeds.popularFeed;
-            final recent = feeds.recentFeed;
-            return RefreshIndicator(
-              onRefresh: () async => loadData(),
-              child: ListView(
-                children: <Widget>[
-                  if (!context.isSmallScreen) const SizedBox(height: 30.0),
-                  FeaturedSection(popular: popular),
-                  const SizedBox(height: 20.0),
-                  const _SectionTitle(title: 'Categories'),
-                  const SizedBox(height: 10.0),
-                  _GenreSection(popular: popular),
-                  const SizedBox(height: 20.0),
-                  const _SectionTitle(title: 'Recently Added'),
-                  const SizedBox(height: 20.0),
-                  _NewSection(recent: recent),
-                ],
-              ),
-            );
-          },
-          error: (_, __) {
-            return MyErrorWidget(
-              refreshCallBack: () => loadData(),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FeaturedSection extends StatelessWidget {
-  final CategoryFeed popular;
-
-  const FeaturedSection({super.key, required this.popular});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200.0,
-      child: Center(
-        child: ListView.builder(
-          primary: false,
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          scrollDirection: Axis.horizontal,
-          itemCount: popular.feed?.entry?.length ?? 0,
-          shrinkWrap: true,
-          itemBuilder: (BuildContext context, int index) {
-            final Entry entry = popular.feed!.entry![index];
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 5.0, vertical: 10.0),
-              child: BookCard(
-                img: entry.link![1].href!,
-                entry: entry,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _GenreSection extends StatelessWidget {
-  final CategoryFeed popular;
-
-  const _GenreSection({required this.popular});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 50.0,
-      child: Center(
-        child: ListView.builder(
-          primary: false,
-          padding: const EdgeInsets.symmetric(horizontal: 15.0),
-          scrollDirection: Axis.horizontal,
-          itemCount: popular.feed?.link?.length ?? 0,
-          shrinkWrap: true,
-          itemBuilder: (BuildContext context, int index) {
-            final Link link = popular.feed!.link![index];
-
-            // We don't need the tags from 0-9 because
-            // they are not categories
-            if (index < 10) {
-              return const SizedBox.shrink();
-            }
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 5.0,
-                vertical: 10.0,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.theme.colorScheme.secondary,
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(20.0),
-                  ),
+        child: libraryState.when(
+            loading: () => const LoadingWidget(),
+            error: (_, __) => MyErrorWidget(
+                  refreshCallBack: _refreshLibrary,
                 ),
-                child: InkWell(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(20.0),
-                  ),
-                  onTap: () {
-                    final route = GenreRoute(
-                      title: '${link.title}',
-                      url: link.href!,
+            data: (books) {
+              if (books.isEmpty) {
+                return _EmptyLibrary(onImport: _importBooks);
+              }
+              return RefreshIndicator(
+                onRefresh: _refreshLibrary,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  itemCount: books.length,
+                  itemBuilder: (context, index) {
+                    final book = books[index];
+                    return _LocalBookTile(
+                      book: book,
+                      onRemove: () => ref
+                          .read(libraryNotifierProvider.notifier)
+                          .removeBook(book.id),
                     );
-                    if (context.isLargeScreen) {
-                      context.router.replace(route);
-                    } else {
-                      context.router.push(route);
-                    }
                   },
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Text(
-                        '${link.title}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
                 ),
-              ),
-            );
-          },
+              );
+            }),
+      ),
+    );
+  }
+}
+
+class _LocalBookTile extends StatelessWidget {
+  const _LocalBookTile({
+    required this.book,
+    required this.onRemove,
+  });
+
+  final LocalBook book;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final placeholder = Container(
+      width: 48,
+      height: 64,
+      decoration: BoxDecoration(
+        color: context.theme.colorScheme.surfaceVariant,
+        borderRadius: const BorderRadius.all(Radius.circular(6)),
+      ),
+      child: const Icon(Icons.menu_book),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+      child: Card(
+        child: ListTile(
+          leading: placeholder,
+          title: Text(book.title),
+          subtitle: Text(book.author ?? 'Unknown author'),
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: onRemove,
+          ),
         ),
       ),
     );
   }
 }
 
-class _NewSection extends StatelessWidget {
-  final CategoryFeed recent;
+class _EmptyLibrary extends StatelessWidget {
+  const _EmptyLibrary({required this.onImport});
 
-  const _NewSection({required this.recent});
+  final VoidCallback onImport;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      primary: false,
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: recent.feed?.entry?.length ?? 0,
-      itemBuilder: (BuildContext context, int index) {
-        final Entry entry = recent.feed!.entry![index];
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 5.0),
-          child: BookListItem(entry: entry),
-        );
-      },
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.library_books, size: 64),
+            const SizedBox(height: 12),
+            const Text(
+              'No books yet',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Import EPUB or PDF files from your device to start reading.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: onImport,
+              icon: const Icon(Icons.file_upload),
+              label: const Text('Import books'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

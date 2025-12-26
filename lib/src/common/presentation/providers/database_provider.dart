@@ -17,3 +17,9 @@ final favoritesDatabaseProvider = Provider<Database>(
     DatabaseConfig.favoritesDatabaseName,
   ),
 );
+
+final libraryDatabaseProvider = Provider<Database>(
+  (ref) => DatabaseConfig.getDatabaseInstance(
+    DatabaseConfig.libraryDatabaseName,
+  ),
+);
