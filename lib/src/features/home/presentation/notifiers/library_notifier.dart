@@ -57,4 +57,16 @@ class LibraryNotifier extends _$LibraryNotifier {
       current.where((book) => book.id != id).toList(),
     );
   }
+
+  Future<void> markBookOpened(LocalBook book) async {
+    final updated = book.copyWith(lastOpenedAt: DateTime.now());
+    await ref.read(localLibraryRepositoryProvider).update(updated);
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    state = AsyncValue.data([
+      for (final existing in current)
+        if (existing.id == updated.id) updated else existing,
+    ]);
+  }
 }
